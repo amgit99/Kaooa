@@ -1,0 +1,405 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" />
+    <title>Crows before</title>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+var config = {
+    type: Phaser.AUTO,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    backgroundColor: '#d1d1b9',
+    scene: {
+        preload: preload,
+        create: create,
+        update: update
+    }  
+}
+
+var game = new Phaser.Game(config);
+var textx;
+var texty
+var counter = 0;
+function preload() {
+    this.load.image('board', 'assets/kaooaboard.jpg');
+    this.load.image('dead', 'assets/dead.png');   
+    this.load.image('0', 'assets/crow0.png');  
+    this.load.image('1', 'assets/crow1.png');
+    this.load.image('2', 'assets/crow2.png');
+    this.load.image('3', 'assets/crow3.png');
+    this.load.image('4', 'assets/crow4.png');
+    this.load.image('5', 'assets/crow5.png');
+    this.load.image('6', 'assets/crow6.png'); 
+    this.load.image('7', 'assets/vulture.png');
+    this.load.image('vertex', 'assets/vertex.png');
+}
+
+function create() {
+    var crows_ingame = 0;
+    var turn = 0;
+    var dead_crows = 0;
+
+    var kaooas = [];
+    var vertices = [];
+
+    var coordsX = [958, 603, 870, 1043, 1321, 821, 1105, 961, 732, 1183];
+    var coordsY = [83, 344, 344, 344, 344, 508, 508, 607, 770, 770];
+
+    var startX = [1500, 1500, 1500, 1500, 1500, 1500, 1500, 1700];
+    var startY = [120, 230, 340, 450, 560, 670, 780, 120];
+
+    var deadX = [120, 120, 120, 120, 320, 320, 320];
+    var deadY = [450, 560, 670, 780, 450, 560, 670];
+
+    var vert_state = [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1];
+    var object_state = [-1,-1,-1,-1,-1,-1,-1,-1];
+
+    /////////////////////// MOVE MAPS ////////////////////////
+    var normal_moves = []
+    //0
+    v = new Set();
+    v.add(2);
+    v.add(3);
+    normal_moves.push(v);
+    //1
+    v = new Set();
+    v.add(2);
+    v.add(5);
+    normal_moves.push(v);
+    //2
+    v = new Set();
+    v.add(1);
+    v.add(0);
+    v.add(3);
+    v.add(5);
+    normal_moves.push(v);
+    //3
+    v = new Set();
+    v.add(0);
+    v.add(2);
+    v.add(4);
+    v.add(6);
+    normal_moves.push(v);
+    //4
+    v = new Set();
+    v.add(3);
+    v.add(6);
+    normal_moves.push(v);
+    //5
+    v = new Set();
+    v.add(1);
+    v.add(2);
+    v.add(8);
+    v.add(7);
+    normal_moves.push(v);
+    //6
+    v = new Set();
+    v.add(3);
+    v.add(4);
+    v.add(7);
+    v.add(9);
+    normal_moves.push(v);
+    //7
+    v = new Set();
+    v.add(5);
+    v.add(6);
+    v.add(8);
+    v.add(9);
+    normal_moves.push(v);
+    //8
+    v = new Set();
+    v.add(5);
+    v.add(7);
+    normal_moves.push(v);
+    //9
+    v = new Set();
+    v.add(6);
+    v.add(7);
+    normal_moves.push(v);
+
+
+var kill_moves = []
+    //0
+    v = new Map();
+    v.set(5, 2);
+    v.set(6, 3);
+    kill_moves.push(v);
+    //1
+    v = new Map();
+    v.set(3, 2);
+    v.set(7, 5);
+    kill_moves.push(v);
+    //2
+    v = new Map();
+    v.set(8, 5);
+    v.set(4, 3);
+    kill_moves.push(v);
+    //3
+    v = new Map();
+    v.set(1, 2);
+    v.set(9, 6);
+    kill_moves.push(v);
+    //4
+    v = new Map();
+    v.set(2, 3);
+    v.set(7, 6);
+    kill_moves.push(v);
+    //5
+    v = new Map();
+    v.set(0, 2);
+    v.set(9, 7);
+    kill_moves.push(v);
+    //6
+    v = new Map();
+    v.set(0, 3);
+    v.set(8, 7);
+    kill_moves.push(v);
+    //7
+    v = new Map();
+    v.set(1, 5);
+    v.set(4, 6);
+    kill_moves.push(v);
+    //8
+    v = new Map();
+    v.set(2, 5);
+    v.set(6, 7);
+    kill_moves.push(v);
+    //9
+    v = new Map();
+    v.set(3, 6);
+    v.set(5, 7);
+    kill_moves.push(v);
+
+
+    ////////////////////////// INSERT CHARACTERS ////////////////////////////
+
+    /*graphics.fillStyle(0xaf0000, 1);
+    capcrowRect = graphics.fillRoundedRect(boardImage.x-550, boardImage.y-310, 100, 620, 20);
+    graphics.fillStyle(0xffffff, 1);
+    graphics.fillRoundedRect(boardImage.x-550, boardImage.y-310, 100, 50, { tl: 20, tr: 20, bl: 0, br: 0 });
+    //add label
+    console.log(capcrowRect);
+    capcrowRectTitle = this.add.text(boardImage.x-537, boardImage.y-295, 'Captured', {
+        fontFamily: 'Arial', fontSize: 18, color: '#000000'
+    });*/
+
+    this.add.image(window.innerWidth/2, window.innerHeight/2, 'board').setScale(0.65);
+    this.add.image(245, 150, 'dead').setScale(0.85);
+    for(var i=0; i<10; ++i){
+        vertices.push(this.add.sprite(coordsX[i], coordsY[i], 'vertex').setInteractive());   
+    }
+    for(var i=0; i<7; i++){
+        kaooas.push(this.add.sprite(startX[i], startY[i], i).setInteractive());
+        this.input.setDraggable(kaooas[i]);
+    }
+    var vulture = this.add.image(startX[7], startY[7], '7').setInteractive();
+    this.input.setDraggable(vulture);
+
+    var logs = "";
+    //download("logs.txt", text);
+
+    /////////////////////////// BEHAVIOUR ////////////////////////////
+
+    this.input.on('dragstart', function (pointer, gameObject) { 
+        gameObject.setTint(0xbbbbbb);
+        gameObject.depth++;
+    });
+    this.input.on('drag', function (pointer, gameObject, dragX, dragY) {
+        gameObject.x = Phaser.Math.Snap.To(dragX, 1);
+        gameObject.y = Phaser.Math.Snap.To(dragY, 1);
+    });
+    this.input.on('dragend', function (pointer, gameObject) {
+        gameObject.depth--;
+        gameObject.clearTint();
+
+        var i = checkOverlap(gameObject);
+        if(i!=-1 && validateMove(gameObject, i)) make_move(gameObject, i);
+        else reset(gameObject);
+
+        if(dead_crows==4){
+            alert("The Vulture Won");
+            download("logs.txt", logs);
+            location.reload();
+        }
+        if(istrapped()){
+            alert("The Crows Win");
+            download("logs.txt", logs);
+            location.reload();
+        }
+    });
+
+    function checkOverlap(spriteA) {
+        var boundsA = spriteA.getBounds();
+        for(var i=0; i<10; ++i){
+            var boundsB = vertices[i].getBounds();
+            if(Phaser.Geom.Intersects.RectangleToRectangle(boundsA, boundsB))return i;
+        }
+        return -1;
+    }
+
+    function validateMove(gameObject, pos){
+        var id = gameObject.texture.key;
+        if(id==7){
+            if(turn==1){
+                if(object_state[id]==-1 && vert_state[pos]==-1){
+                    turn = 0;
+                    return 1;
+                }
+                else if(kill_moves[object_state[id]].has(pos) && vert_state[kill_moves[object_state[id]].get(pos)]!=-1){
+                    ////// YEEEEEET THAT BIRD
+                    yeet_crow(vert_state[kill_moves[object_state[id]].get(pos)]);
+                    turn = 0;
+                    return 1;
+                }
+                else if(vert_state[pos]==-1 && normal_moves[object_state[id]].has(pos)){
+                    var kills=0;
+                    kill_moves[object_state[id]].forEach((value, key) =>{
+                        if(vert_state[key]==-1 && vert_state[value]!=-1)kills++;
+                    });
+                    if(kills>0) return 0;
+                    else {
+                        turn = 0;
+                        return 1;
+                    }
+                }
+                else return 0;
+            }
+            else return 0;
+        }
+        else{
+            if(turn==0){
+                if(crows_ingame<7){
+                    if(object_state[id]==-1 && vert_state[pos]==-1){
+                        crows_ingame++;
+                        turn = 1;
+                        return 1;
+                    }
+                    else return 0;
+                }
+                else{
+                    if(vert_state[pos]==-1 && normal_moves[object_state[id]].has(pos) ){
+                        turn = 1; 
+                        return 1;
+                    }
+                    else return 0;
+                }
+            }
+            else return 0;
+        }
+    }
+
+    function istrapped(){
+        var curr = object_state[7];
+        if(curr!=-1){
+            var block = 0;
+            var free = 0;
+            kill_moves[curr].forEach((value, key) =>{
+                if(vert_state[key]!=-1 && vert_state[value]!=-1)block++;
+            });
+            normal_moves[curr].forEach(element => {
+                if(vert_state[element]==-1)free=1;
+            });
+            if(block==2 && !free)return 1;
+        }
+        return 0;
+    }
+
+    function yeet_crow(crow_id){
+        var from = "vertex"+object_state[crow_id];
+        logs = logs+"crow yeeted from " + from + " ["+coordsX[object_state[crow_id]]+","+coordsY[object_state[crow_id]]+"]\n";
+        vert_state[object_state[crow_id]]=-1;
+        object_state[crow_id] = 10;
+        dead_crows++;
+        kaooas[crow_id].x = deadX[crow_id];
+        kaooas[crow_id].y = deadY[crow_id];
+        kaooas[crow_id].disableInteractive();
+    }
+
+    function make_move(gameObject, pos){
+        var id = gameObject.texture.key;
+
+        var bird, from, to;
+        if(id==7)bird = "vulture";
+        else bird = "crow"+id;
+
+        if(object_state[id]==-1){
+            from = "home";
+            from = from +" ["+startX[id]+","+startY[id]+"]";
+        }
+        else{
+            from = "vertex"+object_state[id];
+            from = from +" ["+coordsX[object_state[id]]+","+coordsY[object_state[id]]+"]";
+        } 
+
+        gameObject.x = coordsX[pos];
+        gameObject.y = coordsY[pos];
+        if(object_state[id]!=-1 || object_state[id]!=10){
+            vert_state[object_state[id]] = -1;
+        }
+        vert_state[pos] = id;
+        object_state[id] = pos;
+
+        to = "vertex"+object_state[id];
+        to = to+" ["+coordsX[object_state[id]]+","+coordsY[object_state[id]]+"]";
+        logs  = logs+bird+" moved from "+from+" to "+to+"\n";
+    }
+
+    function reset(gameObject){
+        var id = gameObject.texture.key;
+        if(object_state[id]>=0 && object_state[id]<10){
+            gameObject.x = coordsX[object_state[id]];
+            gameObject.y = coordsY[object_state[id]];
+        }
+        else if(object_state[id]==-1){
+            gameObject.x = startX[id];
+            gameObject.y = startY[id];
+        }
+        logs = logs + "User made an invalid move\n";
+    }
+
+    function display_state(){
+        var lol = "";
+        for(var i=0; i<10; ++i)lol = lol+vert_state[i]+" ";
+        console.log(lol);
+        lol = "";
+        for(var i=0; i<7; ++i)lol = lol+object_state[i]+" ";
+        console.log(lol)  
+    }
+
+    function download(filename, text) {
+      var element = document.createElement('a');
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+      element.setAttribute('download', filename);
+
+      element.style.display = 'none';
+      document.body.appendChild(element);
+
+      element.click();
+
+      document.body.removeChild(element);
+    }
+}
+
+function update(){
+    console.log(window.innerWidth, window.innerHeight);
+}
+
+//                                            958*53
+//                           603*314   870*314     1043*314   1321*314
+//                                    821*478       1105*478
+//                                           961*577                               
+//                                      732*740   1183*740
+
+</script>
+
+</body>
+</html>
